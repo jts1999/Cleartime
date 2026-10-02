@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClearTime</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:#f4f7fb;
+  color:#172033;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif
+}
+
+.container{
+  max-width:760px;
+  margin:auto;
+  padding:24px 16px 50px
+}
+
+h1{margin:0;font-size:34px}
+.subtitle{color:#667085;margin-top:6px}
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:18px;
+  margin-top:16px;
+  box-shadow:0 5px 20px rgba(0,0,0,.06)
+}
+
+h2{margin-top:0;font-size:20px}
+
+label{
+  display:block;
+  font-weight:600;
+  font-size:14px;
+  margin-top:14px
+}
+
+input,select,button{
+  width:100%;
+  padding:13px;
+  margin-top:6px;
+  border-radius:12px;
+  border:1px solid #d9e0ea;
+  font-size:16px
+}
+
+button{
+  background:#2f6fed;
+  color:#fff;
+  border:none;
+  font-weight:700;
+  cursor:pointer
+}
+
+.drink-types{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-bottom:10px
+}
+
+.drink-types button{
+  background:#eef3fb;
+  color:#172033;
+  padding:11px 5px
+}
+
+.drink-types button.active{
+  background:#2f6fed;
+  color:#fff
+}
+
+.preview,.stat{
+  background:#f7f9fc;
+  border-radius:14px;
+  padding:14px;
+  text-align:center
+}
+
+.preview{margin-top:16px}
+
+.big{
+  font-size:27px;
+  font-weight:750
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px
+}
+
+.stat-label{
+  color:#667085;
+  font-size:12px
+}
+
+.status{
+  margin-top:12px;
+  padding:12px;
+  border-radius:12px;
+  background:#eef7f0;
+  color:#276738;
+  font-size:13px;
+  line-height:1.4
+}
+
+.info{
+  margin-top:12px;
+  padding:12px;
+  border-radius:14px;
+  background:#f2f6ff;
+  color:#344054;
+  font-size:13px;
+  line-height:1.45
+}
+
+.warning{
+  margin-top:16px;
+  padding:13px;
+  border-radius:14px;
+  background:#fff7f7;
+  border:1px solid #f0cccc;
+  color:#653333;
+  font-size:13px;
+  line-height:1.5
+}
+
+.history-item{
+  background:#f7f9fc;
+  padding:12px;
+  border-radius:12px;
+  margin-top:8px
+}
+
+.remove{
+  background:#fff;
+  color:#b42318;
+  border:1px solid #e5c5c2;
+  margin-top:8px;
+  padding:8px
+}
+
+.reset{
+  background:#fff;
+  color:#172033;
+  border:1px solid #d9e0ea;
+  margin-top:14px
+}
+
+.chart-wrap{
+  position:relative;
+  width:100%;
+  height:310px;
+  margin-top:12px
+}
+
+canvas{
+  width:100%;
+  height:100%;
+  display:block
+}
+
+.legend{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  flex-wrap:wrap;
+  font-size:12px;
+  color:#667085;
+  margin-top:8px
+}
+
+.legend span::before{
+  content:"";
+  display:inline-block;
+  width:20px;
+  height:3px;
+  background:#2f6fed;
+  margin-right:6px;
+  vertical-align:middle
+}
+
+.graph-title-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px
+}
+
+.graph-title-row h2{margin:0}
+.small{font-size:12px;color:#667085}
+
+@media(max-width:500px){
+  .drink-types{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:1fr 1fr}
+  .chart-wrap{height:270px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>ClearTime</h1>
+<p class="subtitle">
+Track drinks, UK alcohol units and rough alcohol estimates.
+</p>
+
+<div class="card">
+<h2>Your details</h2>
+
+<label>
+Weight (kg)
+<input id="weight" type="number" min="30" max="250" value="75">
+</label>
+
+<label>
+Sex
+<select id="sex">
+<option value="male">Male</option>
+<option value="female">Female</option>
+<option value="unspecified">Prefer not to say</option>
+</select>
+</label>
+
+<div class="info">
+Weight and sex are used in the mathematical BAC estimate.
+This does not measure your actual blood alcohol concentration.
+</div>
+</div>
+
+<div class="card">
+
+<h2>Add a drink</h2>
+
+<div class="drink-types">
+<button type="button" data-type="lager" class="active">Lager</button>
+<button type="button" data-type="cider">Cider</button>
+<button type="button" data-type="wine">Wine</button>
+<button type="button" data-type="vodka">Vodka</button>
+<button type="button" data-type="gin">Gin</button>
+<button type="button" data-type="other">Other</button>
+</div>
+
+<label>
+Drink
+<select id="drink"></select>
+</label>
+
+<label>
+Volume (ml)
+<input id="volume" type="number" value="568">
+</label>
+
+<label>
+ABV (%)
+<input id="abv" type="number" step="0.1" value="4.6">
+</label>
+
+<label>
+Time consumed
+<input id="drinkTime" type="time">
+</label>
+
+<div class="preview">
+This drink
+<div class="big">
+<span id="drinkUnits">2.61</span> units
+</div>
+</div>
+
+<button type="button" id="addDrink">Add drink</button>
+
+</div>
+
+<div class="card">
+
+<h2>Current session</h2>
+
+<div class="stats">
+
+<div class="stat">
+<div class="stat-label">Drinks logged</div>
+<div class="big" id="drinkCount">0</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Total units</div>
+<div class="big" id="totalUnits">0.00</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Rough estimated BAC now</div>
+<div class="big" id="bac">—</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Estimated BAC reaches 0.00% at</div>
+<div class="big" id="clearTime">—</div>
+</div>
+
+</div>
+
+<div id="bacStatus" class="status" style="display:none"></div>
+
+<div id="history"></div>
+
+<button type="button" class="reset" id="reset">
+Reset session
+</button>
+
+</div>
+
+<div class="card">
+
+<div class="graph-title-row">
+<h2>Estimated BAC over time</h2>
+<span class="small">Simplified model</span>
+</div>
+
+<div class="chart-wrap">
+<canvas id="bacChart"></canvas>
+</div>
+
+<div class="legend">
+<span>Estimated BAC</span>
+</div>
+
+<div class="info">
+The graph uses a simplified model of gradual alcohol absorption
+and elimination. It is intended to illustrate a possible rise,
+peak and decline rather than measure your actual BAC.
+</div>
+
+</div>
+
+<div class="warning">
+<strong>Safety warning:</strong>
+ClearTime provides mathematical estimates only. Alcohol absorption
+and elimination vary substantially between people and circumstances.
+Food, drinking speed, medications, health and many other factors can
+change actual BAC. Do not use this app to decide whether you are safe
+or legally able to drive, cycle, operate machinery or perform any
+safety-critical activity. If there is any doubt, do not drive.
+</div>
+
+</div>
+
+<script>
+
+const drinks={
+
+lager:[
+["Stella Artois",4.6,568],
+["Carling",4.0,568],
+["Foster's",3.7,568],
+["Carlsberg",3.4,568],
+["Peroni",5.0,568],
+["Birra Moretti",4.6,568],
+["San Miguel",5.0,568],
+["Heineken",5.0,568],
+["Madri",4.6,568],
+["Coors",4.0,568],
+["Corona",4.5,330],
+["Budweiser",4.5,330]
+],
+
+cider:[
+["Strongbow",4.5,568],
+["Strongbow Dark Fruit",4.0,568],
+["Thatchers Gold",4.8,568],
+["Thatchers Haze",4.5,568],
+["Magners",4.5,568],
+["Kopparberg",4.0,500],
+["Old Mout",4.0,500]
+],
+
+wine:[
+["Red wine",13,175],
+["White wine",12.5,175],
+["Rosé",12,175],
+["Prosecco",11,125],
+["Champagne",12,125]
+],
+
+vodka:[
+["Smirnoff",37.5,25],
+["Absolut",40,25],
+["Grey Goose",40,25],
+["Cîroc",40,25],
+["Au Vodka",35.2,25]
+],
+
+gin:[
+["Gordon's",37.5,25],
+["Bombay Sapphire",40,25],
+["Tanqueray",43.1,25],
+["Hendrick's",41.4,25]
+],
+
+other:[
+["Guinness",4.2,568],
+["Punk IPA",5.4,330],
+["Smirnoff Ice",4,275],
+["Jack Daniel's",40,25],
+["Jameson",40,25],
+["Baileys",17,50],
+["Custom drink",5,330]
+]
+
+};
+
+let currentType="lager";
+let session=[];
+
+const drinkSelect=document.getElementById("drink");
+const volumeInput=document.getElementById("volume");
+const abvInput=document.getElementById("abv");
+const weightInput=document.getElementById("weight");
+const sexInput=document.getElementById("sex");
+const drinkTimeInput=document.getElementById("drinkTime");
+
+
+function setCurrentTime(){
+
+  const now=new Date();
+
+  drinkTimeInput.value=
+    String(now.getHours()).padStart(2,"0")+
+    ":"+
+    String(now.getMinutes()).padStart(2,"0");
+
+}
+
+
+function loadDrinks(type){
+
+  currentType=type;
+  drinkSelect.innerHTML="";
+
+  drinks[type].forEach(function(item,index){
+
+    const option=document.createElement("option");
+
+    option.value=index;
+    option.textContent=item[0];
+
+    drinkSelect.appendChild(option);
+
+  });
+
+  selectDrink();
+
+}
+
+
+function selectDrink(){
+
+  const item=
+    drinks[currentType][Number(drinkSelect.value)];
+
+  if(!item)return;
+
+  abvInput.value=item[1];
+  volumeInput.value=item[2];
+
+  calculateUnits();
+
+}
+
+
+function calculateUnits(){
+
+  const volume=Number(volumeInput.value)||0;
+  const abv=Number(abvInput.value)||0;
+
+  const units=volume*abv/1000;
+
+  document.getElementById("drinkUnits")
+    .textContent=units.toFixed(2);
+
+  return units;
+
+}
+
+
+function makeDrinkDate(time){
+
+  if(!time)return new Date();
+
+  const parts=time.split(":");
+  const d=new Date();
+
+  d.setHours(
+    Number(parts[0]),
+    Number(parts[1]),
+    0,
+    0
+  );
+
+  /*
+    If somebody enters a time slightly ahead of the
+    current time, assume they meant yesterday.
+  */
+  if(d.getTime()>Date.now()+5*60*1000){
+    d.setDate(d.getDate()-1);
+  }
+
+  return d;
+
+}
+
+
+/*
+  SIMPLIFIED WIDMARK DISTRIBUTION FACTORS
+
+  ClearTime deliberately keeps this simple because
+  it only asks for weight and sex.
+
+  These values are estimates rather than measurements
+  of an individual's body-water distribution.
+*/
+function getDistributionRatio(){
+
+  if(sexInput.value==="male")return 0.68;
+
+  if(sexInput.value==="female")return 0.55;
+
+  return 0.615;
+
+}
+
+
+/*
+  SMOOTH ABSORPTION MODEL
+
+  Alcohol does not instantly appear in the bloodstream.
+
+  For this simplified educational model, each drink is
+  gradually absorbed over approximately 90 minutes.
+
+  A smoothstep curve is used instead of abrupt stages.
+
+  Real absorption can be faster or slower depending on
+  food, drinking speed and individual physiology.
+*/
+function absorptionFraction(hoursSinceDrink){
+
+  if(hoursSinceDrink<=0)return 0;
+
+  const minutes=hoursSinceDrink*60;
+
+  if(minutes>=90)return 1;
+
+  const x=minutes/90;
+
+  return (3*x*x)-(2*x*x*x);
+
+}
+
+
+/*
+  Calculate the BAC contribution from alcohol that has
+  been absorbed by a particular point in time.
+
+  Elimination is deliberately NOT applied per drink.
+*/
+function absorbedBACAtTime(timestamp){
+
+  if(session.length===0)return 0;
+
+  const weight=Number(weightInput.value);
+
+  if(!weight || weight<=0)return 0;
+
+  const r=getDistributionRatio();
+
+  let absorbedBAC=0;
+
+  session.forEach(function(drink){
+
+    const hoursSinceDrink=
+      (timestamp-drink.time)/
+      (1000*60*60);
+
+    if(hoursSinceDrink<=0)return;
+
+    /*
+      One UK alcohol unit contains 8 g of pure alcohol.
+    */
+    const gramsAlcohol=drink.units*8;
+
+    const fullyAbsorbedBAC=
+      (gramsAlcohol/(weight*1000*r))*100;
+
+    absorbedBAC+=
+      fullyAbsorbedBAC*
+      absorptionFraction(hoursSinceDrink);
+
+  });
+
+  return absorbedBAC;
+
+}
+
+
+/*
+  SESSION-WIDE ELIMINATION
+
+  Important improvement over the previous version:
+
+  We apply the elimination rate ONCE across the session,
+  rather than subtracting it independently from every
+  drink.
+
+  0.015 percentage points per hour is used as a central
+  population estimate.
+
+  It does not represent an individual's measured
+  elimination rate.
+*/
+function eliminatedBACAtTime(timestamp){
+
+  if(session.length===0)return 0;
+
+  const firstDrinkTime=
+    Math.min(...session.map(d=>d.time));
+
+  if(timestamp<=firstDrinkTime)return 0;
+
+  const hoursSinceFirstDrink=
+    (timestamp-firstDrinkTime)/
+    (1000*60*60);
+
+  const ELIMINATION_RATE=0.015;
+
+  return ELIMINATION_RATE*hoursSinceFirstDrink;
+
+}
+
+
+function bacAtTime(timestamp){
+
+  if(session.length===0)return 0;
+
+  const absorbed=
+    absorbedBACAtTime(timestamp);
+
+  const eliminated=
+    eliminatedBACAtTime(timestamp);
+
+  return Math.max(
+    0,
+    absorbed-eliminated
+  );
+
+}
+
+
+function calculateBAC(){
+
+  if(session.length===0)return null;
+
+  return bacAtTime(Date.now());
+
+}
+
+
+/*
+  Find the highest estimated BAC.
+
+  We continue searching after the final drink because
+  BAC may still be rising while alcohol is being absorbed.
+*/
+function findPeak(){
+
+  if(session.length===0)return null;
+
+  const firstDrink=
+    Math.min(...session.map(d=>d.time));
+
+  const lastDrink=
+    Math.max(...session.map(d=>d.time));
+
+  const end=
+    Math.max(
+      Date.now(),
+      lastDrink+(3*60*60*1000)
+    );
+
+  let peakBAC=0;
+  let peakTime=firstDrink;
+
+  for(
+    let t=firstDrink;
+    t<=end;
+    t+=60*1000
+  ){
+
+    const value=bacAtTime(t);
+
+    if(value>peakBAC){
+      peakBAC=value;
+      peakTime=t;
+    }
+
+  }
+
+  return{
+    bac:peakBAC,
+    time:peakTime
+  };
+
+}
+
+
+/*
+  Find the estimated time at which the model reaches zero.
+
+  We wait until the assumed absorption window of the final
+  drink has passed before accepting zero as the final
+  clearance point.
+*/
+function findZeroTime(){
+
+  if(session.length===0)return null;
+
+  const now=Date.now();
+
+  const lastDrink=
+    Math.max(...session.map(d=>d.time));
+
+  const searchStart=
+    Math.max(
+      now,
+      lastDrink+(90*60*1000)
+    );
+
+  const maxSearch=
+    searchStart+(24*60*60*1000);
+
+  for(
+    let t=searchStart;
+    t<=maxSearch;
+    t+=60*1000
+  ){
+
+    if(bacAtTime(t)<=0.0001){
+      return t;
+    }
+
+  }
+
+  return null;
+
+}
+
+
+function formatClock(timestamp){
+
+  return new Date(timestamp)
+    .toLocaleTimeString([],{
+      hour:"2-digit",
+      minute:"2-digit"
+    });
+
+}
+
+
+function updateStatus(){
+
+  const box=
+    document.getElementById("bacStatus");
+
+  if(session.length===0){
+
+    box.style.display="none";
+
+    return;
+
+  }
+
+  const now=Date.now();
+
+  const current=bacAtTime(now);
+
+  const tenMinutesLater=
+    bacAtTime(now+10*60*1000);
+
+  const peak=findPeak();
+
+  box.style.display="block";
+
+  if(tenMinutesLater>current+0.0005){
+
+    box.innerHTML=
+      "<strong>Estimated BAC is still rising.</strong>"+
+      (
+        peak
+        ? " Estimated peak around "+
+          formatClock(peak.time)+"."
+        : ""
+      );
+
+  }
+
+  else if(current>0){
+
+    box.innerHTML=
+      "<strong>Estimated BAC is declining.</strong>"+
+      (
+        peak
+        ? " Estimated peak: "+
+          peak.bac.toFixed(3)+"%."
+        : ""
+      );
+
+  }
+
+  else{
+
+    box.innerHTML=
+      "<strong>Current mathematical estimate is 0.000%.</strong>";
+
+  }
+
+}
+
+
+function renderSession(){
+
+  const total=
+    session.reduce(
+      (sum,d)=>sum+d.units,
+      0
+    );
+
+  document.getElementById("drinkCount")
+    .textContent=session.length;
+
+  document.getElementById("totalUnits")
+    .textContent=total.toFixed(2);
+
+  const bac=calculateBAC();
+
+  document.getElementById("bac")
+    .textContent=
+      bac===null
+      ? "—"
+      : bac.toFixed(3)+"%*";
+
+  const zero=findZeroTime();
+
+  document.getElementById("clearTime")
+    .textContent=
+      zero===null
+      ? "—"
+      : formatClock(zero)+"*";
+
+  const history=
+    document.getElementById("history");
+
+  history.innerHTML="";
+
+  session.forEach(function(drink,index){
+
+    const row=
+      document.createElement("div");
+
+    row.className="history-item";
+
+    const time=
+      formatClock(drink.time);
+
+    row.innerHTML=
+      "<strong>"+drink.name+"</strong><br>"+
+      drink.volume+" ml · "+
+      drink.abv+"% · "+
+      drink.units.toFixed(2)+" units · "+
+      time;
+
+    const remove=
+      document.createElement("button");
+
+    remove.type="button";
+    remove.className="remove";
+    remove.textContent="Remove";
+
+    remove.onclick=function(){
+
+      session.splice(index,1);
+
+      renderSession();
+
+    };
+
+    row.appendChild(remove);
+
+    history.appendChild(row);
+
+  });
+
+  updateStatus();
+
+  drawChart();
+
+}
+
+
+function drawChart(){
+
+  const canvas=
+    document.getElementById("bacChart");
+
+  const ctx=
+    canvas.getContext("2d");
+
+  const rect=
+    canvas.getBoundingClientRect();
+
+  const scale=
+    window.devicePixelRatio||1;
+
+  canvas.width=rect.width*scale;
+  canvas.height=rect.height*scale;
+
+  ctx.setTransform(
+    scale,0,0,scale,0,0
+  );
+
+  const width=rect.width;
+  const height=rect.height;
+
+  ctx.clearRect(
+    0,0,width,height
+  );
+
+  if(session.length===0){
+
+    ctx.fillStyle="#667085";
+    ctx.font="14px Arial";
+    ctx.textAlign="center";
+
+    ctx.fillText(
+      "Add a drink to see the estimated BAC curve",
+      width/2,
+      height/2
+    );
+
+    return;
+
+  }
+
+  const left=48;
+  const right=15;
+  const top=20;
+  const bottom=42;
+
+  const graphW=
+    width-left-right;
+
+  const graphH=
+    height-top-bottom;
+
+  const earliest=
+    Math.min(...session.map(d=>d.time));
+
+  const start=
+    Math.min(
+      earliest,
+      Date.now()
+    )-(30*60*1000);
+
+  const zero=findZeroTime();
+
+  const end=
+    zero
+    ? zero+(60*60*1000)
+    : Date.now()+(8*60*60*1000);
+
+  const points=[];
+
+  let maxBAC=0;
+
+  const steps=120;
+
+  for(let i=0;i<=steps;i++){
+
+    const t=
+      start+
+      ((end-start)*i/steps);
+
+    const value=
+      bacAtTime(t);
+
+    points.push({
+      time:t,
+      bac:value
+    });
+
+    maxBAC=
+      Math.max(
+        maxBAC,
+        value
+      );
+
+  }
+
+  maxBAC=
+    Math.max(
+      0.02,
+      maxBAC*1.2
+    );
+
+
+  function xFor(t){
+
+    return left+
+      ((t-start)/(end-start))*
+      graphW;
+
+  }
+
+
+  function yFor(b){
+
+    return top+
+      graphH-
+      (b/maxBAC)*graphH;
+
+  }
+
+
+  /*
+    Horizontal grid
+  */
+  ctx.strokeStyle="#d9e0ea";
+  ctx.lineWidth=1;
+
+  for(let i=0;i<=4;i++){
+
+    const y=
+      top+(graphH*i/4);
+
+    ctx.beginPath();
+    ctx.moveTo(left,y);
+    ctx.lineTo(left+graphW,y);
+    ctx.stroke();
+
+    const value=
+      maxBAC*(1-i/4);
+
+    ctx.fillStyle="#667085";
+    ctx.font="11px Arial";
+    ctx.textAlign="right";
+
+    ctx.fillText(
+      value.toFixed(3)+"%",
+      left-7,
+      y+4
+    );
+
+  }
+
+
+  /*
+    Axes
+  */
+  ctx.beginPath();
+
+  ctx.moveTo(left,top);
+
+  ctx.lineTo(
+    left,
+    top+graphH
+  );
+
+  ctx.lineTo(
+    left+graphW,
+    top+graphH
+  );
+
+  ctx.strokeStyle="#98a2b3";
+
+  ctx.stroke();
+
+
+  /*
+    Fill below BAC curve
+  */
+  ctx.beginPath();
+
+  points.forEach(function(p,i){
+
+    const x=xFor(p.time);
+    const y=yFor(p.bac);
+
+    if(i===0){
+      ctx.moveTo(x,y);
+    }else{
+      ctx.lineTo(x,y);
+    }
+
+  });
+
+  ctx.lineTo(
+    xFor(end),
+    yFor(0)
+  );
+
+  ctx.lineTo(
+    xFor(start),
+    yFor(0)
+  );
+
+  ctx.closePath();
+
+  const gradient=
+    ctx.createLinearGradient(
+      0,
+      top,
+      0,
+      top+graphH
+    );
+
+  gradient.addColorStop(
+    0,
+    "rgba(47,111,237,.22)"
+  );
+
+  gradient.addColorStop(
+    1,
+    "rgba(47,111,237,.02)"
+  );
+
+  ctx.fillStyle=gradient;
+
+  ctx.fill();
+
+
+  /*
+    BAC line
+  */
+  ctx.beginPath();
+
+  points.forEach(function(p,i){
+
+    const x=xFor(p.time);
+    const y=yFor(p.bac);
+
+    if(i===0){
+      ctx.moveTo(x,y);
+    }else{
+      ctx.lineTo(x,y);
+    }
+
+  });
+
+  ctx.strokeStyle="#2f6fed";
+  ctx.lineWidth=3;
+
+  ctx.stroke();
+
+
+  /*
+    Current time marker
+  */
+  if(
+    Date.now()>=start &&
+    Date.now()<=end
+  ){
+
+    const nowX=
+      xFor(Date.now());
+
+    const nowBAC=
+      bacAtTime(Date.now());
+
+    const nowY=
+      yFor(nowBAC);
+
+    ctx.setLineDash([5,5]);
+
+    ctx.strokeStyle="#2f6fed";
+    ctx.lineWidth=1;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      nowX,
+      top
+    );
+
+    ctx.lineTo(
+      nowX,
+      top+graphH
+    );
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+
+    ctx.arc(
+      nowX,
+      nowY,
+      5,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fillStyle="#fff";
+    ctx.fill();
+
+    ctx.strokeStyle="#2f6fed";
+    ctx.lineWidth=3;
+    ctx.stroke();
+
+    ctx.fillStyle="#2f6fed";
+    ctx.font="bold 11px Arial";
+    ctx.textAlign="center";
+
+    ctx.fillText(
+      "Now",
+      nowX,
+      Math.max(
+        12,
+        nowY-12
+      )
+    );
+
+  }
+
+
+  /*
+    Estimated peak marker
+  */
+  const peak=findPeak();
+
+  if(
+    peak &&
+    peak.time>=start &&
+    peak.time<=end
+  ){
+
+    const px=
+      xFor(peak.time);
+
+    const py=
+      yFor(peak.bac);
+
+    ctx.beginPath();
+
+    ctx.arc(
+      px,
+      py,
+      5,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fillStyle="#fff";
+    ctx.fill();
+
+    ctx.strokeStyle="#b42318";
+    ctx.lineWidth=3;
+    ctx.stroke();
+
+    ctx.fillStyle="#b42318";
+    ctx.font="bold 11px Arial";
+    ctx.textAlign="center";
+
+    ctx.fillText(
+      "Peak "+
+      peak.bac.toFixed(3)+
+      "%",
+      px,
+      Math.max(
+        12,
+        py-13
+      )
+    );
+
+  }
+
+
+  /*
+    Time labels
+  */
+  ctx.fillStyle="#667085";
+  ctx.font="11px Arial";
+  ctx.textAlign="center";
+
+  for(let i=0;i<=4;i++){
+
+    const t=
+      start+
+      (end-start)*(i/4);
+
+    ctx.fillText(
+      formatClock(t),
+      xFor(t),
+      height-14
+    );
+
+  }
+
+}
+
+
+/*
+  Drink category buttons
+*/
+document
+.querySelectorAll(".drink-types button")
+.forEach(function(button){
+
+  button.addEventListener(
+    "click",
+    function(){
+
+      document
+      .querySelectorAll(".drink-types button")
+      .forEach(
+        item=>
+          item.classList.remove("active")
+      );
+
+      button.classList.add("active");
+
+      loadDrinks(
+        button.dataset.type
+      );
+
+    }
+  );
+
+});
+
+
+drinkSelect.addEventListener(
+  "change",
+  selectDrink
+);
+
+volumeInput.addEventListener(
+  "input",
+  calculateUnits
+);
+
+abvInput.addEventListener(
+  "input",
+  calculateUnits
+);
+
+weightInput.addEventListener(
+  "input",
+  renderSession
+);
+
+sexInput.addEventListener(
+  "change",
+  renderSession
+);
+
+
+/*
+  Add drink
+*/
+document
+.getElementById("addDrink")
+.addEventListener(
+  "click",
+  function(){
+
+    const selected=
+      drinks[currentType][
+        Number(drinkSelect.value)
+      ];
+
+    const volume=
+      Number(volumeInput.value);
+
+    const abv=
+      Number(abvInput.value);
+
+    if(
+      !selected ||
+      !volume ||
+      !abv
+    )return;
+
+    const drinkDate=
+      makeDrinkDate(
+        drinkTimeInput.value
+      );
+
+    session.push({
+
+      name:selected[0],
+
+      volume:volume,
+
+      abv:abv,
+
+      units:
+        volume*abv/1000,
+
+      time:
+        drinkDate.getTime()
+
+    });
+
+    renderSession();
+
+    setCurrentTime();
+
+  }
+);
+
+
+/*
+  Reset
+*/
+document
+.getElementById("reset")
+.addEventListener(
+  "click",
+  function(){
+
+    session=[];
+
+    renderSession();
+
+    setCurrentTime();
+
+  }
+);
+
+
+window.addEventListener(
+  "resize",
+  drawChart
+);
+
+
+/*
+  Start app
+*/
+setCurrentTime();
+
+loadDrinks("lager");
+
+renderSession();
+
+
+/*
+  Refresh estimate once per minute.
+*/
+setInterval(
+  renderSession,
+  60000
+);
+
+</script>
+
+</body>
+</html>
